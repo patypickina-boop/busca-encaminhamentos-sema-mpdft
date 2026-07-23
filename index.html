@@ -6,79 +6,74 @@
     <title>Busca SEMA - MPDFT</title>
     <style>
         :root { --mp-red: #C62828; --mp-gray: #37474F; --mp-light: #f4f4f4; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--mp-light); padding: 20px; margin: 0; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--mp-light); margin: 0; padding: 20px; }
         .container { max-width: 850px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h1 { color: var(--mp-red); text-align: center; border-bottom: 2px solid var(--mp-red); padding-bottom: 10px; margin-bottom: 20px; }
-        .status-bar { font-size: 12px; color: #666; text-align: center; margin-bottom: 20px; padding: 8px; background: #eee; border-radius: 4px; }
+        .status-bar { font-size: 12px; color: #666; text-align: center; margin-bottom: 20px; padding: 10px; background: #eee; border-radius: 4px; border: 1px solid #ccc; }
         .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
         input, select { padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; outline: none; width: 100%; box-sizing: border-box; }
         .result-card { border: 1px solid #ddd; border-left: 6px solid var(--mp-red); padding: 20px; margin-bottom: 15px; border-radius: 4px; background: #fff; }
         .btn-whatsapp { display: inline-block; margin-top: 15px; text-decoration: none; padding: 10px 20px; border-radius: 4px; color: white; font-weight: bold; background-color: #25D366; }
         .loading { text-align: center; color: var(--mp-red); padding: 40px; font-weight: bold; }
+        @media (max-width: 600px) { .filters { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
+
 <div class="container">
     <h1>Encaminhamento de Medidas Alternativas</h1>
-    <div id="status" class="status-bar">Sincronizando dados...</div>
+    <div id="status" class="status-bar">Conectando à base de dados do MPDFT...</div>
+    
     <div class="filters">
-        <input type="text" id="searchTxt" placeholder="Pesquisar..." onkeyup="filterData()">
-        <select id="filterSema" onchange="filterData()"><option value="">Todos os SEMAs</option></select>
+        <input type="text" id="searchTxt" placeholder="Pesquisar (Promotoria, SEMA ou Telefone)..." onkeyup="filterData()">
+        <select id="filterSema" onchange="filterData()">
+            <option value="">Todos os SEMAs</option>
+        </select>
     </div>
-    <div id="resultsList"><p class="loading">Carregando...</p></div>
+
+    <div id="resultsList"><p class="loading">Buscando dados atualizados...</p></div>
 </div>
 
 <script>
-    // <!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busca SEMA - MPDFT</title>
-    <style>
-        :root { --mp-red: #C62828; --mp-gray: #37474F; --mp-light: #f4f4f4; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--mp-light); padding: 20px; margin: 0; }
-        .container { max-width: 850px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: var(--mp-red); text-align: center; border-bottom: 2px solid var(--mp-red); padding-bottom: 10px; margin-bottom: 20px; }
-        .status-bar { font-size: 12px; color: #666; text-align: center; margin-bottom: 20px; padding: 8px; background: #eee; border-radius: 4px; }
-        .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
-        input, select { padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; outline: none; width: 100%; box-sizing: border-box; }
-        .result-card { border: 1px solid #ddd; border-left: 6px solid var(--mp-red); padding: 20px; margin-bottom: 15px; border-radius: 4px; background: #fff; }
-        .btn-whatsapp { display: inline-block; margin-top: 15px; text-decoration: none; padding: 10px 20px; border-radius: 4px; color: white; font-weight: bold; background-color: #25D366; }
-        .loading { text-align: center; color: var(--mp-red); padding: 40px; font-weight: bold; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h1>Encaminhamento de Medidas Alternativas</h1>
-    <div id="status" class="status-bar">Sincronizando dados...</div>
-    <div class="filters">
-        <input type="text" id="searchTxt" placeholder="Pesquisar..." onkeyup="filterData()">
-        <select id="filterSema" onchange="filterData()"><option value="">Todos os SEMAs</option></select>
-    </div>
-    <div id="resultsList"><p class="loading">Carregando...</p></div>
-</div>
-
-<script>
-    // https://script.google.com/macros/s/AKfycbypeDPlJqosKpwNYz7FyJzSlWbaGX3sKvbHI38VemThfmzvxwKA4kZ6qJZcIeUtOW4/exec';
-
+    const SHEET_ID = '1hICJZHdYDwxCCCtXZ2ORmmiTOc_legGzJ82cYC_BVFk';
+    const SHEET_NAME = '📍 Mapeamento';
     let database = [];
 
-    async function fetchData() {
+    // Função que o Google chama de volta com os dados
+    function googleSheetsCallback(response) {
+        const statusEl = document.getElementById('status');
         try {
-            const response = await fetch(API_URL);
-            database = await response.json();
-            document.getElementById('status').innerText = `Sincronizado: ${database.length} registros.`;
+            const rows = response.table.rows;
+            const cols = response.table.cols;
+            
+            database = rows.map(row => {
+                return {
+                    pj: row.c[0] ? row.c[0].v : "",
+                    sema: row.c[1] ? row.c[1].v : "",
+                    whats: row.c[2] ? row.c[2].v : "",
+                    tel: row.c[3] ? row.c[3].v : ""
+                };
+            }).filter(item => item.pj && item.pj !== "Promotoria");
+
+            statusEl.innerText = `✅ Sincronizado: ${database.length} registros carregados em tempo real.`;
             setupFilters();
             renderResults(database);
-        } catch (error) {
-            document.getElementById('status').innerHTML = "<span style='color:red;'>Erro de conexão. Verifique a implantação do Apps Script.</span>";
+        } catch (e) {
+            statusEl.innerHTML = "<b style='color:red'>Erro ao processar dados. Verifique se a aba se chama '📍 Mapeamento'.</b>";
         }
+    }
+
+    function fetchData() {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:googleSheetsCallback&sheet=${encodeURIComponent(SHEET_NAME)}`;
+        const script = document.createElement('script');
+        script.src = url;
+        document.body.appendChild(script);
     }
 
     function setupFilters() {
         const select = document.getElementById('filterSema');
-        const semas = [...new Set(database.map(item => item['SEMA Responsável']))].filter(s => s).sort();
+        const semas = [...new Set(database.map(item => item.sema))].filter(s => s).sort();
+        select.innerHTML = '<option value="">Todos os SEMAs</option>';
         semas.forEach(sema => {
             const option = document.createElement('option');
             option.value = sema; option.textContent = sema;
@@ -92,10 +87,10 @@
         data.forEach(item => {
             list.innerHTML += `
                 <div class="result-card">
-                    <h3>${item['Promotoria']}</h3>
-                    <p><strong>SEMA Responsável:</strong> ${item['SEMA Responsável']}</p>
-                    <p><strong>Contato:</strong> ${item['Telefone']}</p>
-                    <a href="${item['WhatsApp']}" target="_blank" class="btn btn-whatsapp">Falar no WhatsApp</a>
+                    <h3>${item.pj}</h3>
+                    <p><strong>SEMA Responsável:</strong> ${item.sema}</p>
+                    <p><strong>Contato:</strong> ${item.tel}</p>
+                    <a href="${item.whats}" target="_blank" class="btn btn-whatsapp">Falar no WhatsApp</a>
                 </div>`;
         });
     }
@@ -105,64 +100,12 @@
         const semaFilter = document.getElementById('filterSema').value;
         const filtered = database.filter(item => {
             const matchTxt = Object.values(item).some(val => String(val).toLowerCase().includes(txt));
-            const matchSema = semaFilter === "" || item['SEMA Responsável'] === semaFilter;
+            const matchSema = semaFilter === "" || item.sema === semaFilter;
             return matchTxt && matchSema;
         });
         renderResults(filtered);
     }
-    fetchData();
-</script>
-</body>
-</html>';
 
-    let database = [];
-
-    async function fetchData() {
-        try {
-            const response = await fetch(API_URL);
-            database = await response.json();
-            document.getElementById('status').innerText = `Sincronizado: ${database.length} registros.`;
-            setupFilters();
-            renderResults(database);
-        } catch (error) {
-            document.getElementById('status').innerHTML = "<span style='color:red;'>Erro de conexão. Verifique a implantação do Apps Script.</span>";
-        }
-    }
-
-    function setupFilters() {
-        const select = document.getElementById('filterSema');
-        const semas = [...new Set(database.map(item => item['SEMA Responsável']))].filter(s => s).sort();
-        semas.forEach(sema => {
-            const option = document.createElement('option');
-            option.value = sema; option.textContent = sema;
-            select.appendChild(option);
-        });
-    }
-
-    function renderResults(data) {
-        const list = document.getElementById('resultsList');
-        list.innerHTML = data.length ? '' : '<p style="text-align:center;color:#888;">Nenhum registro encontrado.</p>';
-        data.forEach(item => {
-            list.innerHTML += `
-                <div class="result-card">
-                    <h3>${item['Promotoria']}</h3>
-                    <p><strong>SEMA Responsável:</strong> ${item['SEMA Responsável']}</p>
-                    <p><strong>Contato:</strong> ${item['Telefone']}</p>
-                    <a href="${item['WhatsApp']}" target="_blank" class="btn btn-whatsapp">Falar no WhatsApp</a>
-                </div>`;
-        });
-    }
-
-    function filterData() {
-        const txt = document.getElementById('searchTxt').value.toLowerCase();
-        const semaFilter = document.getElementById('filterSema').value;
-        const filtered = database.filter(item => {
-            const matchTxt = Object.values(item).some(val => String(val).toLowerCase().includes(txt));
-            const matchSema = semaFilter === "" || item['SEMA Responsável'] === semaFilter;
-            return matchTxt && matchSema;
-        });
-        renderResults(filtered);
-    }
     fetchData();
 </script>
 </body>
