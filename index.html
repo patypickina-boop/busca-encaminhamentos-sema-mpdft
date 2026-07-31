@@ -4,41 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Busca SEMA - MPDFT</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        :root { --mp-red: #C62828; --mp-gray: #37474F; --mp-light: #f4f4f4; --mp-blue: #1565C0; }
+        :root { --mp-red: #C62828; --mp-blue: #1565C0; --mp-gray: #37474F; --mp-light: #f4f4f4; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--mp-light); margin: 0; padding: 20px; }
         .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h1 { color: var(--mp-red); text-align: center; border-bottom: 2px solid var(--mp-red); padding-bottom: 10px; margin-bottom: 20px; font-size: 22px; }
         .status-bar { font-size: 12px; color: #666; text-align: center; margin-bottom: 20px; padding: 10px; background: #eee; border-radius: 4px; border: 1px solid #ccc; }
         
+        /* Estilo dos Filtros */
         .filters { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 30px; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 11px; font-weight: bold; color: var(--mp-gray); text-transform: uppercase; }
         input, select { padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; outline: none; width: 100%; box-sizing: border-box; }
         input:focus { border-color: var(--mp-red); }
 
-        .result-card { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; background: #fff; overflow: hidden; }
+        /* Estilo dos Cards */
+        .result-card { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; background: #fff; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .card-header { background: #f8f9fa; padding: 15px; border-bottom: 1px solid #eee; }
-        .card-header h3 { margin: 0; color: var(--mp-gray); font-size: 18px; }
+        .card-header h3 { margin: 0; color: var(--mp-gray); font-size: 17px; }
         
         .card-body { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         
-        .section { padding: 10px; border-radius: 6px; }
-        .section-encaminhamento { border-left: 4px solid var(--mp-red); background: #fff5f5; }
-        .section-credenciamento { border-left: 4px solid var(--mp-blue); background: #f0f7ff; }
+        .section { padding: 15px; border-radius: 6px; height: 100%; box-sizing: border-box; }
+        .section-encaminhamento { border-left: 5px solid var(--mp-red); background: #fff5f5; }
+        .section-credenciamento { border-left: 5px solid var(--mp-blue); background: #f0f7ff; }
         
-        .section h4 { margin: 0 0 8px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .section h4 { margin: 0 0 10px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
         .section-encaminhamento h4 { color: var(--mp-red); }
         .section-credenciamento h4 { color: var(--mp-blue); }
         
-        .area-list { font-size: 13px; color: #444; line-height: 1.4; margin-top: 5px; }
-        
-        .contact-info { grid-column: span 2; padding-top: 15px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .area-text { font-size: 13px; color: #444; line-height: 1.5; }
+        .contact-row { grid-column: span 2; padding-top: 15px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .btn-whatsapp { text-decoration: none; padding: 10px 20px; border-radius: 4px; color: white; font-weight: bold; background-color: #25D366; font-size: 14px; }
         
+        .loading { text-align: center; color: var(--mp-red); padding: 40px; font-weight: bold; }
+
         @media (max-width: 768px) { 
             .filters { grid-template-columns: 1fr; } 
             .card-body { grid-template-columns: 1fr; }
-            .contact-info { flex-direction: column; gap: 15px; text-align: center; }
+            .contact-row { flex-direction: column; gap: 15px; text-align: center; }
         }
     </style>
 </head>
@@ -46,23 +50,31 @@
 
 <div class="container">
     <h1>Busca SEMA - Encaminhamento e Credenciamento</h1>
-    <div id="status" class="status-bar">Sincronizando com a base de dados...</div>
+    <div id="status" class="status-bar">Conectando à base de dados atualizada...</div>
     
     <div class="filters">
-        <input type="text" id="searchTxt" placeholder="Busca por Promotoria..." onkeyup="filterData()">
-        <input type="text" id="searchArea" placeholder="Busca por Bairro/Região..." onkeyup="filterData()">
-        <select id="filterSema" onchange="filterData()">
-            <option value="">Filtrar por SEMA</option>
-        </select>
+        <div class="filter-group">
+            <label>1. Por Promotoria</label>
+            <input type="text" id="searchPj" placeholder="Ex: 1ª Criminal..." onkeyup="filterData()">
+        </div>
+        <div class="filter-group">
+            <label>2. Por Bairro (Credenciamento)</label>
+            <input type="text" id="searchArea" placeholder="Ex: Vicente Pires, Guará..." onkeyup="filterData()">
+        </div>
+        <div class="filter-group">
+            <label>3. Selecionar SEMA</label>
+            <select id="filterSema" onchange="filterData()">
+                <option value="">Todos os SEMAs</option>
+            </select>
+        </div>
     </div>
 
-    <div id="resultsList"></div>
+    <div id="resultsList"><p class="loading">Carregando dados...</p></div>
 </div>
 
 <script>
     const SHEET_ID = '1hICJZHdYDwxCCCtXZ2ORmmiTOc_legGzJ82cYC_BVFk';
     const SHEET_NAME = '📍 Mapeamento';
-    // Usando JSONP para evitar erros de conexão (CORS)
     let database = [];
 
     function googleSheetsCallback(response) {
@@ -74,7 +86,7 @@
                 sema: row.c[1] ? row.c[1].v : "",
                 whats: row.c[2] ? row.c[2].v : "",
                 tel: row.c[3] ? row.c[3].v : "",
-                area: row.c[4] ? row.c[4].v : "Área de credenciamento não informada"
+                area: row.c[4] ? row.c[4].v : "Área de atuação não informada na planilha"
             })).filter(item => item.pj && item.pj !== "Promotoria");
 
             statusEl.innerText = `✅ Sincronizado: ${database.length} registros carregados.`;
@@ -105,24 +117,24 @@
 
     function renderResults(data) {
         const list = document.getElementById('resultsList');
-        list.innerHTML = data.length ? '' : '<p style="text-align:center;color:#888;">Nenhum registro encontrado.</p>';
+        list.innerHTML = data.length ? '' : '<p style="text-align:center;color:#888;">Nenhum registro encontrado para esta busca.</p>';
         data.forEach(item => {
             list.innerHTML += `
                 <div class="result-card">
                     <div class="card-header"><h3>${item.pj}</h3></div>
                     <div class="card-body">
                         <div class="section section-encaminhamento">
-                            <h4>Encaminhamento</h4>
+                            <h4>Encaminhamento de Medida</h4>
                             <strong>${item.sema}</strong>
-                            <div style="font-size:12px; color:#666; margin-top:5px;">Responsável por receber a medida desta Promotoria.</div>
+                            <p style="font-size:11px; color:#666; margin-top:5px;">Este SEMA recebe as medidas desta Promotoria.</p>
                         </div>
                         <div class="section section-credenciamento">
                             <h4>Credenciamento de Instituições</h4>
-                            <div class="area-list">
-                                <strong>Regiões Atendidas:</strong><br>${item.area}
+                            <div class="area-text">
+                                <strong>Bairros Atendidos:</strong><br>${item.area}
                             </div>
                         </div>
-                        <div class="contact-info">
+                        <div class="contact-row">
                             <span><strong>Telefone:</strong> ${item.tel}</span>
                             <a href="${item.whats}" target="_blank" class="btn-whatsapp">Falar no WhatsApp</a>
                         </div>
@@ -132,15 +144,15 @@
     }
 
     function filterData() {
-        const txt = document.getElementById('searchTxt').value.toLowerCase();
+        const pjTxt = document.getElementById('searchPj').value.toLowerCase();
         const areaTxt = document.getElementById('searchArea').value.toLowerCase();
         const semaFilter = document.getElementById('filterSema').value;
 
         const filtered = database.filter(item => {
-            const matchTxt = !txt || item.pj.toLowerCase().includes(txt);
+            const matchPj = !pjTxt || item.pj.toLowerCase().includes(pjTxt);
             const matchArea = !areaTxt || item.area.toLowerCase().includes(areaTxt);
             const matchSema = !semaFilter || item.sema === semaFilter;
-            return matchTxt && matchArea && matchSema;
+            return matchPj && matchArea && matchSema;
         });
         renderResults(filtered);
     }
