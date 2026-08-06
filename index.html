@@ -3,32 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busca SEMA - MPDFT v2.0</title>
+    <title>Busca SEMA - MPDFT v2.1</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --mp-red: #C62828; --mp-blue: #1565C0; --mp-gray: #37474F; --mp-light: #f4f4f4; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--mp-light); margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h1 { color: var(--mp-red); text-align: center; border-bottom: 3px solid var(--mp-red); padding-bottom: 10px; margin-bottom: 5px; font-size: 26px; }
-        .version-tag { text-align: center; font-size: 10px; color: #999; margin-bottom: 20px; }
+        
+        /* Tarja de Confirmação de Atualização */
+        .update-banner { background: #FFEB3B; color: #000; text-align: center; padding: 5px; font-size: 10px; font-weight: bold; border-radius: 4px; margin-bottom: 10px; text-transform: uppercase; }
+        
+        h1 { color: var(--mp-red); text-align: center; border-bottom: 3px solid var(--mp-red); padding-bottom: 10px; margin-bottom: 20px; font-size: 26px; }
         .info-box { background-color: #fffde7; border-left: 5px solid #fbc02d; padding: 15px; border-radius: 4px; margin-bottom: 25px; color: #5d4037; font-size: 14px; line-height: 1.6; }
+
         .section-title { color: var(--mp-blue); font-weight: bold; margin: 30px 0 15px 0; display: flex; align-items: center; gap: 10px; font-size: 18px; text-transform: uppercase; }
         #map { height: 400px; width: 100%; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px; z-index: 1; }
+
         .search-box { background: #f1f3f4; padding: 25px; border-radius: 8px; margin-bottom: 20px; }
         .search-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; align-items: flex-end; }
         .field-group { display: flex; flex-direction: column; gap: 5px; }
         .field-group label { font-size: 11px; font-weight: bold; color: var(--mp-gray); text-transform: uppercase; }
         input, select { padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; outline: none; height: 48px; width: 100%; box-sizing: border-box; }
+        
         .btn-search { background: var(--mp-red); color: white; border: none; padding: 0 30px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 48px; transition: 0.3s; }
+        .btn-search:hover { background: #a52323; }
+
         .result-card { border: 1px solid #eee; border-left: 6px solid var(--mp-red); padding: 20px; margin-bottom: 12px; border-radius: 6px; background: #fff; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .btn-whatsapp { text-decoration: none; padding: 10px 20px; border-radius: 6px; color: white; font-weight: bold; background-color: #25D366; font-size: 14px; }
+
         @media (max-width: 768px) { .search-grid { grid-template-columns: 1fr; } .result-card { flex-direction: column; text-align: center; gap: 15px; } }
     </style>
 </head>
 <body>
+
 <div class="container">
+    <div class="update-banner">SISTEMA ATUALIZADO - v2.1 (MAPA ATIVADO)</div>
     <h1>Busca SEMA - MPDFT</h1>
-    <div class="version-tag">VERSÃO 2.0 - MAPA ATIVADO</div>
     
     <div class="info-box">
         Esta ferramenta identifica o <strong>SEMA responsável pelo encaminhamento</strong> de cada Promotoria. 
@@ -126,7 +136,7 @@
 
     function renderResults(data) {
         const list = document.getElementById('resultsList');
-        list.innerHTML = data.length ? '' : '<p style="text-align:center;color:#888;padding:20px;">Nenhuma promotoria encontrada.</p>';
+        list.innerHTML = data.length ? '' : '<p style="text-align:center;color:#888;">Nenhuma promotoria encontrada.</p>';
         data.forEach(item => {
             list.innerHTML += `
                 <div class="result-card">
@@ -154,4 +164,4 @@
     fetchData();
 </script>
 </body>
-</html>  
+</html>
