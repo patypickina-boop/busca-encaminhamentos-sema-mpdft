@@ -3,16 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busca SEMA - MPDFT v3.0</title>
+    <title>Busca SEMA - MPDFT v4.0</title>
     <!-- Biblioteca de Mapas -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --mp-red: #C62828; --mp-blue: #0D47A1; --mp-gray: #37474F; --mp-light: #f8f9fa; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--mp-light); margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        
-        /* Tarja de Confirmação de Publicação */
-        .update-alert { background: #d32f2f; color: white; text-align: center; padding: 8px; font-size: 12px; font-weight: bold; border-radius: 4px; margin-bottom: 15px; }
         
         h1 { color: var(--mp-red); text-align: center; border-bottom: 3px solid var(--mp-red); padding-bottom: 10px; margin-bottom: 20px; font-size: 26px; }
         
@@ -28,7 +25,7 @@
         .search-box { background: #eceff1; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; align-items: flex-end; }
         .field-group { display: flex; flex-direction: column; gap: 5px; }
         .field-group label { font-size: 11px; font-weight: bold; color: var(--mp-gray); }
-        input, select { padding: 12px; border: 1px solid #cfd8dc; border-radius: 6px; font-size: 15px; outline: none; height: 48px; }
+        input, select { padding: 12px; border: 1px solid #cfd8dc; border-radius: 6px; font-size: 15px; outline: none; height: 48px; width: 100%; box-sizing: border-box; }
         
         .btn-search { background: var(--mp-red); color: white; border: none; padding: 0 30px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 48px; transition: 0.3s; }
         .btn-search:hover { background: #a52323; }
@@ -50,7 +47,6 @@
 <body>
 
 <div class="container">
-    <div class="update-alert">🚨 SISTEMA ATUALIZADO v3.0 - SE VOCÊ VÊ ESTA MENSAGEM, O MAPA ESTÁ ATIVO</div>
     <h1>Busca SEMA - MPDFT</h1>
     
     <div class="info-box">
@@ -59,13 +55,13 @@
         <strong>Dúvidas CEMA: 📞 (61) 99922-6458</strong>
     </div>
 
-    <!-- MAPA DE CREDENCIAMENTO -->
-    <div class="section-title-blue">📍 Mapa de Acompanhamento de Instituições por circunscrição</div>
+    <!-- MAPA DE ACOMPANHAMENTO -->
+    <div class="section-title-blue">📍 Mapa de Acompanhamento de Instituições Parceiras</div>
     <div id="map"></div>
     <div class="map-legend">Clique nos pinos azuis para identificar o SEMA e os bairros atendidos para credenciamento.</div>
 
     <!-- BUSCA DE ENCAMINHAMENTO -->
-    <div class="section-title-red">🔍 Busca de Encaminhamento de Medida Alternativa</div>
+    <div class="section-title-red">🔍 Busca de Encaminhamento (Por Promotoria)</div>
     <div class="search-box">
         <div class="field-group">
             <label>Promotoria de Justiça</label>
@@ -90,7 +86,6 @@
     let database = [];
     let map;
 
-    // Coordenadas fixas para garantir que os pinos apareçam
     const semaCoords = {
         "Sema Brasília I": [-15.7836, -47.9131], "Sema Brasília II": [-15.8322, -47.9446],
         "Sema Águas Claras": [-15.8400, -48.0200], "Sema Taguatinga": [-15.8333, -48.0500],
