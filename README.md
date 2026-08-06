@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busca SEMA - MPDFT</title>
+    <!-- Leaflet CSS para o Mapa -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { --mp-red: #C62828; --mp-blue: #1565C0; --mp-gray: #37474F; --mp-light: #f4f4f4; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--mp-light); margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        h1 { color: var(--mp-red); text-align: center; border-bottom: 2px solid var(--mp-red); padding-bottom: 10px; margin-bottom: 15px; font-size: 24px; }
+        
+        .info-box { background-color: #fffde7; border: 1px solid #fff59d; padding: 15px; border-radius: 6px; margin-bottom: 25px; color: #5d4037; font-size: 14px; line-height: 1.5; }
+
+        /* Estilo do Mapa */
+        #map { height: 450px; width: 100%; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 30px; z-index: 1; }
+        .map-title { color: var(--mp-blue); font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+
+        /* Filtros Simplificados */
+        .search-section { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 30px; }
+        .search-container { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: flex-end; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 11px; font-weight: bold; color: var(--mp-gray); text-transform: uppercase; }
+        input, select { padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; outline: none; width: 100%; box-sizing: border-box; height: 45px; }
+
+        .btn-search { background: var(--mp-red); color: white; border: none; padding: 0 25px; border-radius: 4px; cursor: pointer; font-weight: bold; height: 45px; display: flex; align-items: center; gap: 8px; }
+
+        /* Cards de Resultado */
+        .result-card { border: 1px solid #ddd; border-left: 6px solid var(--mp-red); padding: 15px; margin-bottom: 10px; border-radius: 4px; background: #fff; display: flex; justify-content: space-between; align-items: center; }
+        .card-info h3 { margin: 0; color: var(--mp-gray); font-size: 16px; }
+        .card-info p { margin: 5px 0 0 0; color: #666; font-size: 14px; }
+        .card-info strong { color: var(--mp-red); }
+        .btn-whatsapp { text-decoration: none; padding: 8px 15px; border-radius: 4px; color: white; font-weight: bold; background-color: #25D366; font-size: 12px; }
+
+        @media (max-width: 850px) { 
+            .search-container { grid-template-columns: 1fr; } 
+            .result-card { flex-direction: column; text-align: center; gap: 10px; }
+            #map { height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Busca SEMA - MPDFT</h1>
+    
+    <div class="info-box">
+        Esta ferramenta identifica o <strong>SEMA responsável pelo encaminhamento</strong> de cada Promotoria. 
+        Utilize o <strong>Mapa Interativo</strong> abaixo para consultar as áreas de atuação para o credenciamento de instituições.
+        <br><br>
+        <strong>Dúvidas CEMA: 📞 (61) 99922-6458</strong>
+    </div>
+
+    <div class="map-title">🗺️ Mapa de Atuação (Credenciamento de Instituições)</div>
+    <div id="map"></div>
+
+    <div class="search-section">
+        <div class="map-title" style="color: var(--mp-red);">🔍 Busca de Encaminhamento (Por Promotoria)</div>
+        <div class="search-container">
+            <div class="filter-group">
+                <label>Promotoria de Justiça</label>
+                <input type="text" id="searchPj" placeholder="Ex: 1ª Criminal, Família..." onkeyup="filterData()">
+            </div>
+            <div class="filter-group">
+                <label>Filtrar por SEMA</label>
+                <select id="filterSema" onchange="filterData()">
+                    <option value="">Todos os SEMAs</option>
+                </select>
+            </div>
+            <button class="btn-search" onclick="filterData()">BUSCAR</button>
+        </div>
+    </div>
+
+    <div id="resultsList"></div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    const SHEET_ID = '1hICJZHdYDwxCCCtXZ2ORmmiTOc_legGzJ82cYC_BVFk';
+    const SHEET_NAME = '📍 Mapeamento';
+    let database = [];
+    let map;
+
+    // Coordenadas aproximadas das unidades (Lat, Long)
+    const semaCoords = {
+        "Sema Brasília I": [-15.7836, -47.9131],
+        "Sema Brasília II": [-15.8322, -47.9446],
+        "Sema Águas Claras": [-15.8400, -48.0200],
+        "Sema Taguatinga": [-15.8333, -48.0500],
+        "Sema Ceilândia": [-15.8167, -48.1167],
+        "Sema Gama": [-16.0167, -48.0667],
+        "Sema Guará": [-15.8167, -47.9833],
+        "Sema Núcleo Bandeirante": [-15.8667, -47.9667],
+        "Sema Paranoá": [-15.7667, -47.7833],
+        "Sema Planaltina": [-15.6167, -47.6500],
+        "Sema Recanto das Emas": [-15.9000, -48.0667],
+        "Sema Santa Maria": [-16.0167, -48.0167],
+        "Sema São Sebastião": [-15.9000, -47.7667],
+        "Sema Sobradinho": [-15.6500, -47.7833],
+        "Sema Brazlândia": [-15.6667, -48.2000]
+    };
+
+    function initMap() {
+        map = L.map('map').setView([-15.7942, -47.8822], 10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+    }
+
+    function googleSheetsCallback(response) {
+        try {
+            const rows = response.table.rows;
+            database = rows.map(row => ({
+                pj: row.c[0] ? String(row.c[0].v) : "",
+                sema: row.c[1] ? String(row.c[1].v) : "",
+                whats: row.c[2] ? String(row.c[2].v) : "",
+                tel: row.c[3] ? String(row.c[3].v) : "",
+                area: row.c[4] ? String(row.c[4].v) : ""
+            })).filter(item => item.pj && item.pj !== "Promotoria");
+
+            setupFilters();
+            renderResults(database);
+            addMarkers();
+        } catch (e) { console.error(e); }
+    }
+
+    function fetchData() {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:googleSheetsCallback&sheet=${encodeURIComponent(SHEET_NAME)}`;
+        const script = document.createElement('script');
+        script.src = url;
+        document.body.appendChild(script);
+    }
+
+    function setupFilters() {
+        const select = document.getElementById('filterSema');
+        const semas = [...new Set(database.map(item => item.sema))].filter(s => s).sort();
+        semas.forEach(sema => {
+            const option = document.createElement('option');
+            option.value = sema; option.textContent = sema;
+            select.appendChild(option);
+        });
+    }
+
+    function addMarkers() {
+        const uniqueSemas = new Map();
+        database.forEach(item => {
+            if (!uniqueSemas.has(item.sema)) uniqueSemas.set(item.sema, item.area);
+        });
+
+        uniqueSemas.forEach((area, sema) => {
+            const coords = semaCoords[sema];
+            if (coords) {
+                L.marker(coords).addTo(map)
+                    .bindPopup(`<b>${sema}</b><br><br><b>Área de Credenciamento:</b><br>${area}`);
+            }
+        });
+    }
+
+    function renderResults(data) {
+        const list = document.getElementById('resultsList');
+        list.innerHTML = data.length ? '' : '<p style="text-align:center;color:#888;">Nenhuma promotoria encontrada.</p>';
+        data.forEach(item => {
+            list.innerHTML += `
+                <div class="result-card">
+                    <div class="card-info">
+                        <h3>${item.pj}</h3>
+                        <p>Encaminhar para: <strong>${item.sema}</strong></p>
+                    </div>
+                    <a href="${item.whats}" target="_blank" class="btn-whatsapp">WhatsApp: ${item.tel}</a>
+                </div>`;
+        });
+    }
+
+    function filterData() {
+        const pjTxt = document.getElementById('searchPj').value.toLowerCase().trim();
+        const semaFilter = document.getElementById('filterSema').value;
+        const filtered = database.filter(item => {
+            const matchPj = !pjTxt || item.pj.toLowerCase().includes(pjTxt);
+            const matchSema = !semaFilter || item.sema === semaFilter;
+            return matchPj && matchSema;
+        });
+        renderResults(filtered);
+    }
+
+    initMap();
+    fetchData();
+</script>
+</body>
+</html>
