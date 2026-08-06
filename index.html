@@ -3,80 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busca SEMA - MPDFT</title>
-    <!-- Mapas Interativos -->
+    <title>Busca SEMA - MPDFT v2.0</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --mp-red: #C62828; --mp-blue: #1565C0; --mp-gray: #37474F; --mp-light: #f4f4f4; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--mp-light); margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        
-        h1 { color: var(--mp-red); text-align: center; border-bottom: 3px solid var(--mp-red); padding-bottom: 10px; margin-bottom: 20px; font-size: 26px; }
-        
+        h1 { color: var(--mp-red); text-align: center; border-bottom: 3px solid var(--mp-red); padding-bottom: 10px; margin-bottom: 5px; font-size: 26px; }
+        .version-tag { text-align: center; font-size: 10px; color: #999; margin-bottom: 20px; }
         .info-box { background-color: #fffde7; border-left: 5px solid #fbc02d; padding: 15px; border-radius: 4px; margin-bottom: 25px; color: #5d4037; font-size: 14px; line-height: 1.6; }
-
-        /* Seção do Mapa */
         .section-title { color: var(--mp-blue); font-weight: bold; margin: 30px 0 15px 0; display: flex; align-items: center; gap: 10px; font-size: 18px; text-transform: uppercase; }
         #map { height: 400px; width: 100%; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px; z-index: 1; }
-        .map-legend { font-size: 12px; color: #666; margin-bottom: 30px; font-style: italic; }
-
-        /* Seção de Busca */
         .search-box { background: #f1f3f4; padding: 25px; border-radius: 8px; margin-bottom: 20px; }
         .search-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; align-items: flex-end; }
         .field-group { display: flex; flex-direction: column; gap: 5px; }
         .field-group label { font-size: 11px; font-weight: bold; color: var(--mp-gray); text-transform: uppercase; }
-        input, select { padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; outline: none; height: 48px; }
-        
+        input, select { padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; outline: none; height: 48px; width: 100%; box-sizing: border-box; }
         .btn-search { background: var(--mp-red); color: white; border: none; padding: 0 30px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 48px; transition: 0.3s; }
-        .btn-search:hover { background: #a52323; transform: translateY(-2px); }
-
-        /* Resultados */
         .result-card { border: 1px solid #eee; border-left: 6px solid var(--mp-red); padding: 20px; margin-bottom: 12px; border-radius: 6px; background: #fff; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .card-content h3 { margin: 0; color: var(--mp-gray); font-size: 18px; }
-        .card-content p { margin: 8px 0 0 0; color: #555; font-size: 15px; }
-        .card-content b { color: var(--mp-red); font-size: 17px; }
-        
-        .btn-whatsapp { text-decoration: none; padding: 10px 20px; border-radius: 6px; color: white; font-weight: bold; background-color: #25D366; font-size: 14px; transition: 0.3s; }
-        .btn-whatsapp:hover { background-color: #1ebd59; }
-
-        @media (max-width: 768px) { 
-            .search-grid { grid-template-columns: 1fr; }
-            .result-card { flex-direction: column; text-align: center; gap: 15px; }
-        }
+        .btn-whatsapp { text-decoration: none; padding: 10px 20px; border-radius: 6px; color: white; font-weight: bold; background-color: #25D366; font-size: 14px; }
+        @media (max-width: 768px) { .search-grid { grid-template-columns: 1fr; } .result-card { flex-direction: column; text-align: center; gap: 15px; } }
     </style>
 </head>
 <body>
-
 <div class="container">
     <h1>Busca SEMA - MPDFT</h1>
+    <div class="version-tag">VERSÃO 2.0 - MAPA ATIVADO</div>
     
     <div class="info-box">
-        Esta ferramenta foi desenvolvida para identificar o <strong>SEMA responsável pelo encaminhamento</strong> de cada Promotoria de Justiça, bem como consultar a <strong>área de atuação</strong> de cada unidade para o credenciamento de instituições parceiras.
+        Esta ferramenta identifica o <strong>SEMA responsável pelo encaminhamento</strong> de cada Promotoria. 
+        Consulte a <strong>área de atuação</strong> para credenciamento no mapa abaixo.
         <br><br>
         <strong>Dúvidas CEMA: 📞 (61) 99922-6458</strong>
     </div>
 
     <div class="section-title">📍 Mapa de Credenciamento (Por Bairro)</div>
     <div id="map"></div>
-    <div class="map-legend">Clique nos marcadores azuis para ver os bairros atendidos por cada SEMA.</div>
 
     <div class="section-title" style="color: var(--mp-red);">🔍 Busca de Encaminhamento (Por Promotoria)</div>
     <div class="search-box">
         <div class="search-grid">
             <div class="field-group">
                 <label>Promotoria de Justiça</label>
-                <input type="text" id="searchPj" placeholder="Ex: 1ª Criminal, Família..." onkeyup="filterData()">
+                <input type="text" id="searchPj" placeholder="Ex: 1ª Criminal..." onkeyup="filterData()">
             </div>
             <div class="field-group">
                 <label>Filtrar por SEMA</label>
-                <select id="filterSema" onchange="filterData()">
-                    <option value="">Todos os SEMAs</option>
-                </select>
+                <select id="filterSema" onchange="filterData()"><option value="">Todos os SEMAs</option></select>
             </div>
             <button class="btn-search" onclick="filterData()">BUSCAR</button>
         </div>
     </div>
-
     <div id="resultsList"></div>
 </div>
 
