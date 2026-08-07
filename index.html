@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busca SEMA - MPDFT v9.0</title>
+    <title>Busca SEMA - MPDFT v10.0</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --mp-red: #C62828; --mp-blue: #0D47A1; --mp-gray: #37474F; --mp-light: #f8f9fa; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--mp-light); margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         
-        .update-alert { background: #2196F3; color: white; text-align: center; padding: 8px; font-size: 12px; font-weight: bold; border-radius: 4px; margin-bottom: 15px; }
+        .update-alert { background: #673AB7; color: white; text-align: center; padding: 8px; font-size: 12px; font-weight: bold; border-radius: 4px; margin-bottom: 15px; }
         
         h1 { color: var(--mp-red); text-align: center; border-bottom: 3px solid var(--mp-red); padding-bottom: 10px; margin-bottom: 20px; font-size: 26px; }
         
@@ -26,15 +26,19 @@
         .btn-search { background: var(--mp-red); color: white; border: none; padding: 0 30px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 48px; transition: 0.3s; }
         
         .result-card { border: 1px solid #e0e0e0; border-left: 8px solid var(--mp-red); padding: 20px; margin-bottom: 12px; border-radius: 6px; background: #fff; display: flex; justify-content: space-between; align-items: center; }
-        .btn-whatsapp { text-decoration: none; padding: 12px 20px; border-radius: 6px; color: white; font-weight: bold; background-color: #25D366; font-size: 14px; }
+        .card-content h3 { margin: 0; color: var(--mp-gray); font-size: 18px; }
+        .card-content p { margin: 5px 0 0 0; color: #555; font-size: 16px; }
         
+        .btn-whatsapp { text-decoration: none; padding: 12px 20px; border-radius: 6px; color: white; font-weight: bold; background-color: #25D366; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .btn-whatsapp:hover { background-color: #1ebd59; }
+
         @media (max-width: 768px) { .search-box { grid-template-columns: 1fr; } .result-card { flex-direction: column; text-align: center; gap: 15px; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="update-alert">🚀 SISTEMA ATUALIZADO v9.0 - MAPA DE ACOMPANHAMENTO ATIVO</div>
+    <div class="update-alert">✨ SISTEMA ATUALIZADO v10.0 - AUTOCOMPLETAR ATIVADO</div>
     <h1>Busca SEMA - MPDFT</h1>
     
     <div class="info-box">
@@ -48,10 +52,11 @@
 
     <div class="section-title-red">🔍 Busca de Encaminhamento (Por Promotoria)</div>
     <div class="search-box">
-        <div class="field-group">
-            <input type="text" id="searchPj" placeholder="Ex: 1ª Criminal..." onkeyup="filterData()">
+        <div class="field-group" style="width: 100%;">
+            <input type="text" id="searchPj" list="pjList" placeholder="Digite o nome da Promotoria..." onkeyup="filterData()">
+            <datalist id="pjList"></datalist>
         </div>
-        <div class="field-group">
+        <div class="field-group" style="width: 100%;">
             <select id="filterSema" onchange="filterData()"><option value="">Todos os SEMAs</option></select>
         </div>
         <button class="btn-search" onclick="filterData()">BUSCAR</button>
@@ -67,7 +72,6 @@
     let database = [];
     let map;
 
-    // Coordenadas atualizadas incluindo Riacho Fundo e Samambaia
     const semaCoords = {
         "Sema Brasília I": [-15.7836, -47.9131], "Sema Brasília II": [-15.8322, -47.9446],
         "Sema Águas Claras": [-15.8400, -48.0200], "Sema Taguatinga": [-15.8333, -48.0500],
@@ -76,8 +80,7 @@
         "Sema Paranoá": [-15.7667, -47.7833], "Sema Planaltina": [-15.6167, -47.6500],
         "Sema Recanto das Emas": [-15.9000, -48.0667], "Sema Santa Maria": [-16.0167, -48.0167],
         "Sema São Sebastião": [-15.9000, -47.7667], "Sema Sobradinho": [-15.6500, -47.7833],
-        "Sema Brazlândia": [-15.6667, -48.2000],
-        "Sema Riacho Fundo": [-15.8764, -48.0153],
+        "Sema Brazlândia": [-15.6667, -48.2000], "Sema Riacho Fundo": [-15.8764, -48.0153],
         "Sema Samambaia": [-15.8764, -48.0851]
     };
 
@@ -94,8 +97,10 @@
                 sema: row.c[1] ? String(row.c[1].v) : "",
                 whats: row.c[2] ? String(row.c[2].v) : "",
                 tel: row.c[3] ? String(row.c[3].v) : "",
-                area: row.c[5] ? String(row.c[5].v) : "" // LENDO COLUNA F (Índice 5)
+                area: row.c[5] ? String(row.c[5].v) : "" 
             })).filter(item => item.pj && item.pj !== "Promotoria");
+            
+            setupAutocomplete();
             setupFilters();
             renderResults(database);
             addMarkers();
@@ -109,9 +114,21 @@
         document.body.appendChild(script);
     }
 
+    function setupAutocomplete() {
+        const datalist = document.getElementById('pjList');
+        const pjs = [...new Set(database.map(item => item.pj))].sort();
+        datalist.innerHTML = "";
+        pjs.forEach(pj => {
+            const option = document.createElement('option');
+            option.value = pj;
+            datalist.appendChild(option);
+        });
+    }
+
     function setupFilters() {
         const select = document.getElementById('filterSema');
         const semas = [...new Set(database.map(item => item.sema))].filter(s => s).sort();
+        select.innerHTML = '<option value="">Todos os SEMAs</option>';
         semas.forEach(sema => {
             const option = document.createElement('option');
             option.value = sema; option.textContent = sema;
@@ -122,7 +139,6 @@
     function addMarkers() {
         const uniqueSemas = new Map();
         database.forEach(item => { 
-            // Só adiciona se a Coluna F (area) tiver conteúdo
             if (item.area && item.area.trim() !== "" && !uniqueSemas.has(item.sema)) {
                 uniqueSemas.set(item.sema, item.area); 
             }
@@ -132,12 +148,7 @@
             const coords = semaCoords[sema.trim()];
             if (coords) {
                 L.circleMarker(coords, {
-                    radius: 10,
-                    fillColor: "#0D47A1",
-                    color: "#fff",
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.8
+                    radius: 10, fillColor: "#0D47A1", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8
                 }).addTo(map).bindPopup(`<b>${sema}</b><br><br><b>Acompanhamento de Instituições:</b><br>${area}`);
             }
         });
@@ -153,7 +164,9 @@
                         <h3>${item.pj}</h3>
                         <p>Encaminhar para: <b>${item.sema}</b></p>
                     </div>
-                    <a href="${item.whats}" target="_blank" class="btn-whatsapp">WhatsApp: ${item.tel}</a>
+                    <a href="${item.whats}" target="_blank" class="btn-whatsapp">
+                        <span>💬</span> Falar com o SEMA: ${item.tel}
+                    </a>
                 </div>`;
         });
     }
